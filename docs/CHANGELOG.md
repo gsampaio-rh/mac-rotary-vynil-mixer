@@ -1,4 +1,4 @@
-# Changelog: Vinyl Audio
+# Changelog: Mac Rotary Vynil Mixer
 
 **Related:** [README](../README.md) | [Architecture](ARCHITECTURE.md)
 

@@ -5,9 +5,9 @@
     <key>CFBundleName</key>
     <string>VinylAudio</string>
     <key>CFBundleDisplayName</key>
-    <string>Vinyl Audio</string>
+    <string>Rotary Vynil Mixer</string>
     <key>CFBundleIdentifier</key>
-    <string>com.vinyl.audio</string>
+    <string>com.gsampaio.rotary-vynil-mixer</string>
     <key>CFBundleVersion</key>
     <string>1.0</string>
     <key>CFBundleShortVersionString</key>

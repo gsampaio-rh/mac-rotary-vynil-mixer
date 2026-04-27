@@ -1,10 +1,10 @@
-# Architecture: Vinyl Audio
+# Architecture: Mac Rotary Vynil Mixer
 
 **Related:** [README](../README.md) | [Changelog](CHANGELOG.md)
 
 ## System Overview
 
-Vinyl Audio is a macOS menu bar application that simulates vinyl record audio characteristics in real time. The app has no external dependencies — it uses only Apple frameworks (SwiftUI, AVFoundation, CoreAudio, AudioToolbox).
+Mac Rotary Vynil Mixer is a macOS menu bar application that simulates vinyl record audio characteristics in real time. The app has no external dependencies — it uses only Apple frameworks (SwiftUI, AVFoundation, CoreAudio, AudioToolbox).
 
 ```
 ┌─────────────────────────────────────────────────────────┐
