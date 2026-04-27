@@ -48,7 +48,7 @@ Grab the latest `VinylAudio-x.x.x-macOS.zip` from the [Releases](../../releases)
 ### Build from source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/mac-rotary-vynil-mixer.git
+git clone git@github.com:gsampaio-rh/mac-rotary-vynil-mixer.git
 cd mac-rotary-vynil-mixer
 make install
 ```
