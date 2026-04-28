@@ -7,7 +7,9 @@ A macOS menu bar app that applies real-time vinyl record simulation effects to y
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 
 <p align="center">
-  <img src="assets/screenshot.png" alt="Mac Rotary Vynil Mixer" width="340">
+  <img src="assets/screenshot-night.png" alt="Night Mode" width="320">
+  &nbsp;&nbsp;
+  <img src="assets/screenshot-day.png" alt="Day Mode" width="320">
 </p>
 
 ## What it does
@@ -21,12 +23,13 @@ Both modes can run simultaneously for the full vinyl experience.
 
 ## Features
 
-- Professional rotary mixer UI with chrome knobs, dot scales, and blue LED indicators
+- **Analog VU meters** — needle-style meters with cream face, arc scale, red zone, glass overlay, and signal LEDs
+- **Scalloped rotary knobs** — fluted body with brushed aluminum chrome cap, radial brushing texture, and center dimple (inspired by Condesa Lucia / Ecler WARM4 / Bozak AR-4)
+- **Night / Day theme** — toggle between dark panel and Bozak AR-4 brushed silver mode, with smooth animated transition and persistent preference
 - 3-band EQ (HIGH / MID / LOW) with cut and boost
 - Resonant state variable filter with LP/HP mode toggle
 - Multi-tap delay reverb
 - 6 vinyl character controls: Surface Noise, Crackle, Pops, Warmth, Wow & Flutter, Rumble
-- Real-time VU meters (L/R) with green/yellow/red segments
 - 4 presets: Pristine, Well-Loved, Vintage, Flea Market
 - Master volume control
 - Independent routing and noise toggles

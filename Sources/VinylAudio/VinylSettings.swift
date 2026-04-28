@@ -11,6 +11,10 @@ enum VinylPreset: String, CaseIterable, Identifiable {
 }
 
 final class VinylSettings: ObservableObject {
+    @Published var isDarkMode: Bool = UserDefaults.standard.object(forKey: "isDarkMode") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(isDarkMode, forKey: "isDarkMode") }
+    }
+
     @Published var selectedPreset: VinylPreset? = .wellLoved
 
     @Published var surfaceNoise: Float = 0.30 {

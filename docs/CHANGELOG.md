@@ -2,6 +2,24 @@
 
 **Related:** [README](../README.md) | [Architecture](ARCHITECTURE.md)
 
+## v1.1.0 — Analog UI Overhaul
+
+**Date:** 2026-04-28
+
+### UI
+
+- **Analog VU meters** — replaced digital LED bar meters with needle-style analog gauges featuring cream face, arc scale with VU markings (-20 to +3), red zone indicator, glass overlay, pivot point, and signal LED indicators (green/amber/red)
+- **Scalloped rotary knobs** — redesigned knobs with 12-lobe fluted body, brushed aluminum chrome cap with radial texture, angular edge bevel, center dimple, and groove ring (inspired by Condesa Lucia, Ecler WARM4, Bozak AR-4)
+- **Night / Day theme** — manual toggle between dark panel (original) and Bozak AR-4 brushed silver mode; 17-property `MixerTheme` struct with SwiftUI `@Environment` propagation; smooth 0.3s animated transition; preference persisted via `UserDefaults`
+- **Engraved section dividers** — two-tone groove lines simulating machined metal panel
+
+### Architecture
+
+- Introduced `MixerTheme` color system with `EnvironmentKey` for clean theme propagation through all components
+- Added `isDarkMode` to `VinylSettings` with `UserDefaults` persistence
+
+---
+
 ## v1.0.0 — Initial Release
 
 **Date:** 2026-04-27

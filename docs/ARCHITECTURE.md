@@ -50,10 +50,10 @@ Entry point. Creates a `MenuBarExtra` with `.window` style. Sets the activation 
 SwiftUI view rendered inside the menu bar popover. Contains all UI components:
 
 - **ChannelStrip** — toggle button with LED indicator and custom switch graphics
-- **VUMeter** — 24-segment horizontal bar meter (L/R channels), color-coded green/yellow/red
-- **RotaryKnob** — circular dial with scale notches, active arc, and drag gesture (270° rotation range, -135° to +135°)
-- **PresetPill** — selectable preset button with amber highlight
-- **RecordView** — animated spinning vinyl disc using `TimelineView`
+- **AnalogVUMeter** — needle-style analog gauge with cream face, arc scale (-20 to +3 VU), red zone, glass overlay, and signal LEDs; rendered via SwiftUI Canvas (scale) + animated Capsule (needle)
+- **MixerKnob** — scalloped 12-lobe body with brushed aluminum chrome cap, radial brushing texture (concentric circles), angular edge bevel, and center dimple; drag gesture with 270° rotation range
+- **PresetChip** — selectable preset button with amber highlight
+- **RecordSpinner** — animated spinning vinyl disc using `TimelineView`
 
 All subviews are `private` to the file.
 
@@ -126,9 +126,15 @@ Stateless enum wrapping CoreAudio C APIs. Handles:
 
 Thread-safe single-producer single-consumer circular buffer. Uses a heap-allocated `pthread_mutex_t` for synchronization between the capture thread (writer) and playback thread (reader). Handles underruns gracefully by zero-filling.
 
+### MixerTheme
+
+Value type holding all theme-dependent colors (17 properties). Two static instances (`.night` and `.day`) define the dark and light palettes. Propagated through the view hierarchy via a custom SwiftUI `EnvironmentKey`, so child components access colors via `@Environment(\.mixerTheme)` without explicit parameter passing.
+
+Design constraints: knob body/cap colors are theme-independent (dark knobs on any panel, matching real hardware). VU meter face stays cream. Only structural colors (panel, sections, labels, bezels, wells) adapt.
+
 ### VinylSettings
 
-`ObservableObject` bridging UI controls to DSP parameters. Supports 4 presets and automatically clears the active preset when any slider is manually adjusted.
+`ObservableObject` bridging UI controls to DSP parameters. Supports 4 presets and automatically clears the active preset when any slider is manually adjusted. Also holds `isDarkMode` (persisted to `UserDefaults`) for theme selection.
 
 ## Threading Model
 

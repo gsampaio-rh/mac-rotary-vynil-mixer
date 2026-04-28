@@ -1,24 +1,100 @@
 import SwiftUI
 
+// MARK: - Theme-independent accent colors
+
 private let amber = Color(red: 0.85, green: 0.65, blue: 0.30)
-private let panelBg = Color(red: 0.04, green: 0.04, blue: 0.05)
-private let sectionBg = Color(white: 0.06)
-private let labelColor = Color(white: 0.50)
-private let dimLabel = Color(white: 0.30)
-private let vuGreen = Color(red: 0.29, green: 0.87, blue: 0.50)
-private let vuYellow = Color(red: 0.98, green: 0.75, blue: 0.14)
-private let vuRed = Color(red: 0.94, green: 0.27, blue: 0.27)
 private let ledBlue = Color(red: 0.30, green: 0.52, blue: 1.0)
+private let meterCream = Color(red: 0.93, green: 0.90, blue: 0.83)
+private let meterRed = Color(red: 0.80, green: 0.12, blue: 0.10)
+
+// MARK: - Mixer Theme
+
+struct MixerTheme {
+    let panelBg: Color
+    let sectionBg: Color
+    let labelColor: Color
+    let dimLabel: Color
+    let cardBg: Color
+    let cardStroke: Color
+    let wellColor: Color
+    let wellColorDeep: Color
+    let dotMajorOpacity: Double
+    let dotMinorOpacity: Double
+    let bezelTop: Color
+    let bezelBottom: Color
+    let inactiveLED: Color
+    let engraveTop: Color
+    let engraveBottom: Color
+    let switchTrack: Color
+    let switchThumb: Color
+
+    static let night = MixerTheme(
+        panelBg: Color(red: 0.04, green: 0.04, blue: 0.05),
+        sectionBg: Color(white: 0.06),
+        labelColor: Color(white: 0.50),
+        dimLabel: Color(white: 0.30),
+        cardBg: Color(white: 0.04),
+        cardStroke: Color.white.opacity(0.03),
+        wellColor: Color(white: 0.04),
+        wellColorDeep: Color(white: 0.015),
+        dotMajorOpacity: 0.45,
+        dotMinorOpacity: 0.15,
+        bezelTop: Color(white: 0.12),
+        bezelBottom: Color(white: 0.05),
+        inactiveLED: Color(white: 0.08),
+        engraveTop: Color.black.opacity(0.3),
+        engraveBottom: Color.white.opacity(0.04),
+        switchTrack: Color(white: 0.06),
+        switchThumb: Color(white: 0.22)
+    )
+
+    static let day = MixerTheme(
+        panelBg: Color(red: 0.73, green: 0.70, blue: 0.66),
+        sectionBg: Color(red: 0.69, green: 0.66, blue: 0.62),
+        labelColor: Color(white: 0.12),
+        dimLabel: Color(white: 0.38),
+        cardBg: Color(red: 0.64, green: 0.62, blue: 0.58),
+        cardStroke: Color.black.opacity(0.08),
+        wellColor: Color(white: 0.55),
+        wellColorDeep: Color(white: 0.48),
+        dotMajorOpacity: 0.80,
+        dotMinorOpacity: 0.35,
+        bezelTop: Color(white: 0.52),
+        bezelBottom: Color(white: 0.40),
+        inactiveLED: Color(white: 0.52),
+        engraveTop: Color.white.opacity(0.30),
+        engraveBottom: Color.black.opacity(0.10),
+        switchTrack: Color(white: 0.55),
+        switchThumb: Color(white: 0.38)
+    )
+}
+
+private struct MixerThemeKey: EnvironmentKey {
+    static let defaultValue = MixerTheme.night
+}
+
+extension EnvironmentValues {
+    var mixerTheme: MixerTheme {
+        get { self[MixerThemeKey.self] }
+        set { self[MixerThemeKey.self] = newValue }
+    }
+}
+
+// MARK: - Main View
 
 struct MenuBarView: View {
     @ObservedObject var settings: VinylSettings
     @ObservedObject var engine: AudioEngineManager
 
+    private var theme: MixerTheme {
+        settings.isDarkMode ? .night : .day
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             titleBar
-            channelToggles
             vuSection
+            channelToggles
             knobSection("EQ") {
                 MixerKnob(label: "HIGH", value: $settings.eqHigh, centered: true)
                 MixerKnob(label: "MID", value: $settings.eqMid, centered: true)
@@ -40,7 +116,9 @@ struct MenuBarView: View {
             footer
         }
         .frame(width: 340)
-        .background(panelBg)
+        .background(theme.panelBg)
+        .environment(\.mixerTheme, theme)
+        .animation(.easeInOut(duration: 0.3), value: settings.isDarkMode)
         .onChange(of: settings.dspParameters) {
             engine.updateParameters(settings.dspParameters)
         }
@@ -57,16 +135,28 @@ struct MenuBarView: View {
                     .font(.system(size: 11, weight: .heavy, design: .monospaced))
                     .tracking(2)
                     .foregroundStyle(amber)
-                Text("professional mixer")
+                Text("rotary mixer")
                     .font(.system(size: 8, weight: .medium))
                     .tracking(0.5)
-                    .foregroundStyle(dimLabel)
+                    .foregroundStyle(theme.dimLabel)
             }
             Spacer()
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
-        .background(sectionBg)
+        .background(theme.sectionBg)
+    }
+
+    // MARK: - VU Meters
+
+    private var vuSection: some View {
+        HStack(spacing: 8) {
+            AnalogVUMeter(level: engine.levelL, channel: "LEFT")
+            AnalogVUMeter(level: engine.levelR, channel: "RIGHT")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(theme.sectionBg)
     }
 
     // MARK: - Channel Toggles
@@ -88,15 +178,7 @@ struct MenuBarView: View {
             ) { engine.toggleOverlay(settings: settings) }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-    }
-
-    // MARK: - VU
-
-    private var vuSection: some View {
-        VUMeter(levelL: engine.levelL, levelR: engine.levelR)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
+        .padding(.vertical, 4)
     }
 
     // MARK: - Knob Section Builder
@@ -109,9 +191,9 @@ struct MenuBarView: View {
             sectionHeader(title)
             HStack(spacing: 0) { content() }
                 .padding(.horizontal, 4)
-                .padding(.bottom, 4)
+                .padding(.bottom, 2)
         }
-        .background(sectionBg)
+        .background(theme.sectionBg)
         .padding(.horizontal, 4)
         .padding(.top, 2)
     }
@@ -128,15 +210,14 @@ struct MenuBarView: View {
             }
             .padding(.horizontal, 4)
 
-            // Filter mode toggle
             HStack(spacing: 0) {
                 Spacer()
                 FilterModeSwitch(isHighPass: $settings.filterIsHighPass)
                 Spacer()
             }
-            .padding(.bottom, 6)
+            .padding(.bottom, 4)
         }
-        .background(sectionBg)
+        .background(theme.sectionBg)
         .padding(.horizontal, 4)
         .padding(.top, 2)
     }
@@ -148,22 +229,22 @@ struct MenuBarView: View {
             Text("MASTER")
                 .font(.system(size: 7, weight: .bold))
                 .tracking(1)
-                .foregroundStyle(dimLabel)
+                .foregroundStyle(theme.dimLabel)
                 .frame(width: 40)
 
             Image(systemName: "speaker.fill")
                 .font(.system(size: 7))
-                .foregroundStyle(dimLabel)
+                .foregroundStyle(theme.dimLabel)
 
             Slider(value: $settings.masterVolume, in: 0...1)
                 .tint(amber)
 
             Image(systemName: "speaker.wave.3.fill")
                 .font(.system(size: 7))
-                .foregroundStyle(dimLabel)
+                .foregroundStyle(theme.dimLabel)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
     }
 
     // MARK: - Presets
@@ -181,7 +262,7 @@ struct MenuBarView: View {
             }
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
     }
 
     // MARK: - Footer
@@ -194,10 +275,20 @@ struct MenuBarView: View {
                     .font(.system(size: 8))
                 Text(msg)
                     .font(.system(size: 8))
-                    .foregroundStyle(dimLabel)
+                    .foregroundStyle(theme.dimLabel)
                     .lineLimit(1)
             }
             Spacer()
+
+            Button {
+                settings.isDarkMode.toggle()
+            } label: {
+                Image(systemName: settings.isDarkMode ? "sun.max" : "moon.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(theme.dimLabel)
+            }
+            .buttonStyle(.plain)
+
             Button("QUIT") {
                 engine.stop()
                 NSApplication.shared.terminate(nil)
@@ -205,25 +296,220 @@ struct MenuBarView: View {
             .buttonStyle(.plain)
             .font(.system(size: 7, weight: .bold))
             .tracking(1)
-            .foregroundStyle(dimLabel)
+            .foregroundStyle(theme.dimLabel)
+            .padding(.leading, 6)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 6)
+        .padding(.vertical, 5)
     }
 
     // MARK: - Helpers
 
     private func sectionHeader(_ title: String) -> some View {
         HStack {
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+            engravedLine
             Text(title)
                 .font(.system(size: 7, weight: .heavy))
                 .tracking(1.5)
-                .foregroundStyle(dimLabel)
-            Rectangle().fill(Color.white.opacity(0.06)).frame(height: 1)
+                .foregroundStyle(theme.dimLabel)
+            engravedLine
         }
         .padding(.horizontal, 10)
-        .padding(.top, 4)
+        .padding(.top, 3)
+    }
+
+    private var engravedLine: some View {
+        VStack(spacing: 0) {
+            Rectangle().fill(theme.engraveTop).frame(height: 0.5)
+            Rectangle().fill(theme.engraveBottom).frame(height: 0.5)
+        }
+    }
+}
+
+// MARK: - Analog VU Meter
+
+private struct AnalogVUMeter: View {
+    let level: Float
+    let channel: String
+    @Environment(\.mixerTheme) private var theme
+
+    private let meterW: CGFloat = 146
+    private let meterH: CGFloat = 78
+
+    private var pivotX: CGFloat { meterW / 2 }
+    private var pivotY: CGFloat { meterH - 9 }
+
+    private var needleAngle: Double {
+        -45 + Double(max(0, min(1, level))) * 90
+    }
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Text(channel)
+                .font(.system(size: 7, weight: .bold))
+                .tracking(1.5)
+                .foregroundStyle(amber)
+
+            signalLEDs
+
+            ZStack {
+                meterBezel
+                meterFace
+                meterScaleCanvas
+                meterNeedle
+                meterPivot
+                meterGlass
+            }
+            .frame(width: meterW, height: meterH)
+        }
+    }
+
+    private var signalLEDs: some View {
+        HStack(spacing: 3) {
+            signalDot(active: level > 0.02, color: Color(red: 0.29, green: 0.87, blue: 0.50))
+            signalDot(active: level > 0.50, color: amber)
+            signalDot(active: level > 0.85, color: meterRed)
+        }
+    }
+
+    private func signalDot(active: Bool, color: Color) -> some View {
+        Circle()
+            .fill(active ? color : theme.inactiveLED)
+            .frame(width: 4, height: 4)
+            .shadow(color: active ? color.opacity(0.7) : .clear, radius: 3)
+    }
+
+    private var meterBezel: some View {
+        RoundedRectangle(cornerRadius: 7)
+            .fill(
+                LinearGradient(
+                    colors: [theme.bezelTop, theme.bezelBottom],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
+            .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
+    }
+
+    private var meterFace: some View {
+        RoundedRectangle(cornerRadius: 4)
+            .fill(
+                RadialGradient(
+                    colors: [meterCream, meterCream.opacity(0.90)],
+                    center: .init(x: 0.5, y: 0.35),
+                    startRadius: 5, endRadius: 80
+                )
+            )
+            .padding(3)
+    }
+
+    private var meterScaleCanvas: some View {
+        Canvas { ctx, size in
+            let px = size.width / 2
+            let py = size.height - 6
+            let r: CGFloat = 46
+
+            drawArc(ctx: ctx, px: px, py: py, r: r)
+            drawRedZone(ctx: ctx, px: px, py: py, r: r)
+            drawTicks(ctx: ctx, px: px, py: py, r: r)
+            drawVULabel(ctx: ctx, px: px, py: py)
+        }
+        .padding(3)
+    }
+
+    private func drawArc(ctx: GraphicsContext, px: CGFloat, py: CGFloat, r: CGFloat) {
+        var arc = Path()
+        arc.addArc(
+            center: CGPoint(x: px, y: py), radius: r,
+            startAngle: .degrees(225), endAngle: .degrees(315),
+            clockwise: false
+        )
+        ctx.stroke(arc, with: .color(.black.opacity(0.25)), lineWidth: 0.8)
+    }
+
+    private func drawRedZone(ctx: GraphicsContext, px: CGFloat, py: CGFloat, r: CGFloat) {
+        var redArc = Path()
+        redArc.addArc(
+            center: CGPoint(x: px, y: py), radius: r - 3,
+            startAngle: .degrees(225 + 0.77 * 90), endAngle: .degrees(315),
+            clockwise: false
+        )
+        ctx.stroke(redArc, with: .color(meterRed.opacity(0.55)), lineWidth: 2)
+    }
+
+    private func drawTicks(ctx: GraphicsContext, px: CGFloat, py: CGFloat, r: CGFloat) {
+        let marks: [(label: String, pos: Double, major: Bool, red: Bool)] = [
+            ("-20", 0.00, true, false), ("", 0.07, false, false),
+            ("", 0.14, false, false),   ("-10", 0.22, true, false),
+            ("", 0.29, false, false),   ("-7", 0.36, true, false),
+            ("", 0.42, false, false),   ("-5", 0.48, true, false),
+            ("", 0.54, false, false),   ("-3", 0.60, true, false),
+            ("", 0.65, false, false),   ("", 0.70, false, false),
+            ("0", 0.77, true, true),    ("", 0.85, false, true),
+            ("", 0.92, false, true),    ("+3", 1.00, true, true),
+        ]
+
+        for mark in marks {
+            let deg = 225.0 + mark.pos * 90.0
+            let rad = deg * .pi / 180.0
+            let tickLen: CGFloat = mark.major ? 5 : 3
+            let tickW: CGFloat = mark.major ? 1.0 : 0.6
+            let color: Color = mark.red ? meterRed : .black.opacity(0.6)
+
+            let outer = CGPoint(x: px + (r + 1) * cos(rad), y: py + (r + 1) * sin(rad))
+            let inner = CGPoint(x: px + (r - tickLen) * cos(rad), y: py + (r - tickLen) * sin(rad))
+
+            var tick = Path()
+            tick.move(to: inner)
+            tick.addLine(to: outer)
+            ctx.stroke(tick, with: .color(color), lineWidth: tickW)
+
+            if mark.major && !mark.label.isEmpty {
+                let lr = r + 9
+                let lp = CGPoint(x: px + lr * cos(rad), y: py + lr * sin(rad))
+                let txt = Text(mark.label)
+                    .font(.system(size: 5.5, weight: .semibold))
+                    .foregroundColor(mark.red ? meterRed : .black.opacity(0.55))
+                ctx.draw(txt, at: lp)
+            }
+        }
+    }
+
+    private func drawVULabel(ctx: GraphicsContext, px: CGFloat, py: CGFloat) {
+        let vu = Text("VU")
+            .font(.system(size: 7, weight: .heavy, design: .serif))
+            .foregroundColor(.black.opacity(0.22))
+        ctx.draw(vu, at: CGPoint(x: px, y: py - 18))
+    }
+
+    private var meterNeedle: some View {
+        Capsule()
+            .fill(Color(red: 0.10, green: 0.06, blue: 0.04))
+            .frame(width: 1.5, height: 44)
+            .shadow(color: .black.opacity(0.12), radius: 0.5, y: 0.5)
+            .offset(y: -22)
+            .rotationEffect(.degrees(needleAngle))
+            .position(x: pivotX, y: pivotY)
+            .animation(.easeOut(duration: 0.12), value: level)
+    }
+
+    private var meterPivot: some View {
+        ZStack {
+            Circle().fill(Color(white: 0.25)).frame(width: 7, height: 7)
+            Circle().fill(Color(white: 0.10)).frame(width: 4, height: 4)
+        }
+        .position(x: pivotX, y: pivotY)
+    }
+
+    private var meterGlass: some View {
+        RoundedRectangle(cornerRadius: 4)
+            .fill(
+                LinearGradient(
+                    colors: [.white.opacity(0.10), .clear, .clear],
+                    startPoint: .top, endPoint: .bottom
+                )
+            )
+            .padding(3)
+            .allowsHitTesting(false)
     }
 }
 
@@ -235,6 +521,7 @@ private struct ChannelToggle: View {
     let isActive: Bool
     let enabled: Bool
     let action: () -> Void
+    @Environment(\.mixerTheme) private var theme
 
     var body: some View {
         Button(action: { if enabled { action() } }) {
@@ -242,19 +529,19 @@ private struct ChannelToggle: View {
                 Text(label)
                     .font(.system(size: 8, weight: .heavy))
                     .tracking(1)
-                    .foregroundStyle(enabled ? labelColor : dimLabel)
+                    .foregroundStyle(enabled ? theme.labelColor : theme.dimLabel)
 
                 Circle()
-                    .fill(isActive ? ledBlue : Color(white: 0.10))
+                    .fill(isActive ? ledBlue : theme.inactiveLED)
                     .frame(width: 7, height: 7)
                     .shadow(color: isActive ? ledBlue.opacity(0.7) : .clear, radius: 5)
 
                 Capsule()
-                    .fill(isActive ? amber.opacity(0.25) : Color(white: 0.06))
+                    .fill(isActive ? amber.opacity(0.25) : theme.switchTrack)
                     .frame(width: 34, height: 16)
                     .overlay(
                         Circle()
-                            .fill(isActive ? amber : Color(white: 0.22))
+                            .fill(isActive ? amber : theme.switchThumb)
                             .frame(width: 12, height: 12)
                             .shadow(color: .black.opacity(0.4), radius: 1, y: 1)
                             .offset(x: isActive ? 8 : -8)
@@ -263,16 +550,16 @@ private struct ChannelToggle: View {
 
                 Text(sublabel)
                     .font(.system(size: 7))
-                    .foregroundStyle(dimLabel)
+                    .foregroundStyle(theme.dimLabel)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(Color(white: 0.04))
+                    .fill(theme.cardBg)
                     .overlay(
                         RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.white.opacity(0.03), lineWidth: 1)
+                            .stroke(theme.cardStroke, lineWidth: 1)
                     )
             )
         }
@@ -281,51 +568,17 @@ private struct ChannelToggle: View {
     }
 }
 
-// MARK: - VU Meter
-
-private struct VUMeter: View {
-    let levelL: Float
-    let levelR: Float
-    private let segments = 24
-
-    var body: some View {
-        VStack(spacing: 2) {
-            meterRow(level: levelL, label: "L")
-            meterRow(level: levelR, label: "R")
-        }
-    }
-
-    private func meterRow(level: Float, label: String) -> some View {
-        HStack(spacing: 1.2) {
-            Text(label)
-                .font(.system(size: 6, weight: .bold, design: .monospaced))
-                .foregroundStyle(dimLabel)
-                .frame(width: 8)
-            ForEach(0..<segments, id: \.self) { i in
-                let ratio = Float(i) / Float(segments)
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(level > ratio ? segmentColor(ratio) : segmentColor(ratio).opacity(0.08))
-                    .frame(height: 6)
-            }
-        }
-    }
-
-    private func segmentColor(_ r: Float) -> Color {
-        if r < 0.55 { return vuGreen }
-        if r < 0.78 { return vuYellow }
-        return vuRed
-    }
-}
-
-// MARK: - Mixer Knob (Chrome)
+// MARK: - Mixer Knob (Chrome Cap)
 
 private struct MixerKnob: View {
     let label: String
     @Binding var value: Float
     var centered: Bool = false
+    @Environment(\.mixerTheme) private var theme
 
     @State private var dragStart: Float?
-    private let size: CGFloat = 38
+    private let size: CGFloat = 40
+    private let capSize: CGFloat = 24
 
     private var angle: Double {
         -135 + Double(value) * 270
@@ -336,70 +589,15 @@ private struct MixerKnob: View {
             Text(label)
                 .font(.system(size: 6, weight: .bold))
                 .tracking(0.8)
-                .foregroundStyle(labelColor)
+                .foregroundStyle(theme.labelColor)
 
             ZStack {
-                // Recessed well
-                Circle()
-                    .fill(Color(white: 0.025))
-                    .frame(width: size + 12, height: size + 12)
-
-                // Dot scale markings
-                ForEach(0..<11, id: \.self) { i in
-                    let a = -135.0 + Double(i) / 10.0 * 270.0
-                    let isMajor = i == 0 || i == 5 || i == 10
-                    Circle()
-                        .fill(Color.white.opacity(isMajor ? 0.45 : 0.15))
-                        .frame(width: isMajor ? 2.5 : 1.5,
-                               height: isMajor ? 2.5 : 1.5)
-                        .offset(y: -(size / 2 + 4))
-                        .rotationEffect(.degrees(a))
-                }
-
-                // Active arc
-                if !centered {
-                    Circle()
-                        .trim(from: 0, to: CGFloat(value) * 0.75)
-                        .stroke(amber.opacity(0.3), style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                        .frame(width: size + 3, height: size + 3)
-                        .rotationEffect(.degrees(135))
-                }
-
-                // Chrome knob body
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color(white: 0.38), Color(white: 0.14)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: size, height: size)
-                    .shadow(color: .black.opacity(0.5), radius: 3, y: 2)
-
-                // Inner chrome ring
-                Circle()
-                    .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
-                    .frame(width: size - 5, height: size - 5)
-
-                // Center cap highlight
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [Color.white.opacity(0.08), .clear],
-                            center: .init(x: 0.35, y: 0.30),
-                            startRadius: 0,
-                            endRadius: size * 0.35
-                        )
-                    )
-                    .frame(width: size - 4, height: size - 4)
-
-                // White indicator line
-                Capsule()
-                    .fill(.white)
-                    .frame(width: 2, height: size * 0.30)
-                    .offset(y: -(size * 0.22))
-                    .rotationEffect(.degrees(angle))
+                knobWell
+                scaleMarks
+                if !centered { valueArc }
+                knobBody
+                chromeCap
+                indicatorLine
             }
             .frame(width: size + 14, height: size + 14)
             .contentShape(Rectangle())
@@ -419,12 +617,135 @@ private struct MixerKnob: View {
         }
         .frame(maxWidth: .infinity)
     }
+
+    private var knobWell: some View {
+        Circle()
+            .fill(
+                RadialGradient(
+                    colors: [theme.wellColor, theme.wellColorDeep],
+                    center: .center, startRadius: 5, endRadius: 28
+                )
+            )
+            .frame(width: size + 12, height: size + 12)
+    }
+
+    private var scaleMarks: some View {
+        ForEach(0..<11, id: \.self) { i in
+            let a = -135.0 + Double(i) / 10.0 * 270.0
+            let isMajor = i == 0 || i == 5 || i == 10
+            Circle()
+                .fill(Color.white.opacity(isMajor ? theme.dotMajorOpacity : theme.dotMinorOpacity))
+                .frame(width: isMajor ? 2.5 : 1.5,
+                       height: isMajor ? 2.5 : 1.5)
+                .offset(y: -(size / 2 + 4))
+                .rotationEffect(.degrees(a))
+        }
+    }
+
+    private var valueArc: some View {
+        Circle()
+            .trim(from: 0, to: CGFloat(value) * 0.75)
+            .stroke(amber.opacity(0.3), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+            .frame(width: size + 3, height: size + 3)
+            .rotationEffect(.degrees(135))
+    }
+
+    private var knobBody: some View {
+        ZStack {
+            ForEach(0..<12, id: \.self) { i in
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color(white: 0.11), Color(white: 0.04)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    .frame(width: 12, height: 12)
+                    .offset(y: -(size / 2 - 3))
+                    .rotationEffect(.degrees(Double(i) * 30))
+            }
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color(white: 0.08), Color(white: 0.04)],
+                        center: .center, startRadius: 2, endRadius: 20
+                    )
+                )
+                .frame(width: size - 6, height: size - 6)
+
+            Circle()
+                .stroke(Color.black.opacity(0.6), lineWidth: 1.2)
+                .frame(width: capSize + 3, height: capSize + 3)
+        }
+        .shadow(color: .black.opacity(0.55), radius: 3, y: 2)
+    }
+
+    private var chromeCap: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color(white: 0.54), Color(white: 0.40), Color(white: 0.48)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: capSize, height: capSize)
+
+            ForEach(3..<Int(capSize / 2), id: \.self) { r in
+                Circle()
+                    .stroke(
+                        Color.white.opacity(r % 3 == 0 ? 0.09 : 0.03),
+                        lineWidth: 0.5
+                    )
+                    .frame(width: CGFloat(r) * 2, height: CGFloat(r) * 2)
+            }
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.white.opacity(0.25), .clear],
+                        center: .init(x: 0.32, y: 0.28),
+                        startRadius: 0, endRadius: capSize * 0.35
+                    )
+                )
+                .frame(width: capSize - 2, height: capSize - 2)
+
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        colors: [
+                            Color.white.opacity(0.18),
+                            Color.white.opacity(0.04),
+                            Color.black.opacity(0.10),
+                            Color.white.opacity(0.14),
+                        ],
+                        center: .center
+                    ),
+                    lineWidth: 0.8
+                )
+                .frame(width: capSize - 1, height: capSize - 1)
+
+            Circle()
+                .fill(Color(white: 0.30))
+                .frame(width: 3, height: 3)
+        }
+    }
+
+    private var indicatorLine: some View {
+        Capsule()
+            .fill(.white)
+            .frame(width: 2.5, height: size * 0.35)
+            .offset(y: -(size * 0.25))
+            .rotationEffect(.degrees(angle))
+    }
 }
 
 // MARK: - Filter Mode Switch
 
 private struct FilterModeSwitch: View {
     @Binding var isHighPass: Bool
+    @Environment(\.mixerTheme) private var theme
 
     var body: some View {
         HStack(spacing: 0) {
@@ -443,7 +764,7 @@ private struct FilterModeSwitch: View {
         Text(text)
             .font(.system(size: 7, weight: .bold))
             .tracking(0.5)
-            .foregroundStyle(active ? ledBlue : dimLabel)
+            .foregroundStyle(active ? ledBlue : theme.dimLabel)
     }
 }
 
@@ -453,6 +774,7 @@ private struct PresetChip: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
+    @Environment(\.mixerTheme) private var theme
 
     var body: some View {
         Button(action: action) {
@@ -462,13 +784,13 @@ private struct PresetChip: View {
                 .padding(.vertical, 3)
                 .background(
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(isSelected ? amber.opacity(0.18) : Color(white: 0.05))
+                        .fill(isSelected ? amber.opacity(0.18) : theme.cardBg)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 4)
-                        .stroke(isSelected ? amber.opacity(0.5) : Color.white.opacity(0.04), lineWidth: 1)
+                        .stroke(isSelected ? amber.opacity(0.5) : theme.cardStroke, lineWidth: 1)
                 )
-                .foregroundStyle(isSelected ? amber : labelColor)
+                .foregroundStyle(isSelected ? amber : theme.labelColor)
         }
         .buttonStyle(.plain)
     }
